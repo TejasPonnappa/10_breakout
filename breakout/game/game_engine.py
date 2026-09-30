@@ -64,7 +64,9 @@ class GameEngine:
 
         for brick in self.bricks:
             if handle_ball_brick_collision(self.ball, brick):
-                brick.hits_remaining -= 1   # BUG: tracked, but never actually checked to remove the brick
+                brick.hits_remaining -= 1
+                if brick.hits_remaining <= 0:
+                    self.bricks.remove(brick)
                 break
 
         if self.ball.is_below(HEIGHT):
