@@ -27,6 +27,8 @@ BRICK_TOP_MARGIN = 50
 STARTING_LIVES = 3
 STRONG_SHARE = 0.20
 UNBREAKABLE_SHARE = 0.10
+BRICK_POINTS = {NORMAL: 10, STRONG: 30}
+MAX_MULTIPLIER = 8
 
 class GameEngine:
     def __init__(self):
@@ -38,6 +40,12 @@ class GameEngine:
         self.bricks = self._build_bricks()
         self.lives = STARTING_LIVES
         self.game_over = False
+        self.score=0
+        self.combo=0
+
+    @property
+    def multiplier(self):
+        return min(1 + self.combo, MAX_MULTIPLIER)
 
     def _random_layout(self):
         """Return {(row, col): kind} with an exact 70/20/10 split, randomly placed."""
@@ -109,10 +117,13 @@ class GameEngine:
         for brick in self.bricks:
             if handle_ball_brick_collision(self.ball, brick):
                 if brick.hit():
+                    self.score += BRICK_POINTS[brick.kind] * self.multiplier
+                    self.combo += 1
                     self.bricks.remove(brick)
                 break
 
         if self.ball.is_below(HEIGHT):
+            self.combo = 0
             self.lives -= 1
             if self.lives <= 0:
                 self.game_over = True
@@ -124,6 +135,8 @@ class GameEngine:
         renderer.draw_scene(surface, self.paddle, self.ball, self.bricks)
         breakable_left = sum(1 for b in self.bricks if b.is_breakable)
         renderer.draw_text(surface, font, f"Bricks left: {breakable_left}", (10, 10))
+        renderer.draw_text(surface, font, f"Score: {self.score}", (190, 10))
+        renderer.draw_text(surface, font, f"Combo x{self.multiplier}", (350, 10))
         renderer.draw_text(surface, font, f"Lives: {self.lives}", (WIDTH - 110, 10))
         if self.game_over:
-            renderer.draw_banner(surface, font, "GAME OVER - Press R to restart")
+            renderer.draw_banner(surface, font, f"GAME OVER - Score {self.score} - Press R to restart")
