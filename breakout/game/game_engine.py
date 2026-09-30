@@ -22,13 +22,18 @@ BRICK_WIDTH = 68
 BRICK_HEIGHT = 22
 BRICK_GAP = 6
 BRICK_TOP_MARGIN = 50
-
+STARTING_LIVES = 3
 
 class GameEngine:
     def __init__(self):
+        self.restart()
+
+    def restart(self):
         self.paddle = Paddle(x=WIDTH / 2, y=HEIGHT - 30)
         self.ball = Ball(x=WIDTH / 2, y=HEIGHT - 50)
         self.bricks = self._build_bricks()
+        self.lives = STARTING_LIVES
+        self.game_over = False
 
     def _build_bricks(self):
         bricks = []
@@ -45,6 +50,8 @@ class GameEngine:
         self.ball = Ball(x=WIDTH / 2, y=HEIGHT - 50)
 
     def handle_input(self, keys_pressed):
+        if self.game_over:
+            return
         dx = 0
         if keys_pressed[pygame.K_LEFT]:
             dx -= self.paddle.speed
@@ -53,9 +60,13 @@ class GameEngine:
         self.paddle.move(dx, WIDTH)
 
     def handle_keydown(self, key):
-        pass
+        if self.game_over and key == pygame.K_r:
+            self.restart()
 
     def update(self):
+        if self.game_over:
+            return
+
         self.ball.update()
         self.ball.bounce_off_walls(WIDTH)
 
@@ -70,9 +81,16 @@ class GameEngine:
                 break
 
         if self.ball.is_below(HEIGHT):
-            self._reset_ball()
+            self.lives -= 1
+            if self.lives <= 0:
+                self.game_over = True
+            else:
+                self._reset_ball()
 
     def draw(self, surface, font):
         from game import renderer
         renderer.draw_scene(surface, self.paddle, self.ball, self.bricks)
         renderer.draw_text(surface, font, f"Bricks left: {len(self.bricks)}", (10, 10))
+        renderer.draw_text(surface, font, f"Lives: {self.lives}", (WIDTH - 110, 10))
+        if self.game_over:
+            renderer.draw_banner(surface, font, "GAME OVER - Press R to restart")
